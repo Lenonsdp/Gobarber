@@ -107,6 +107,11 @@ class AppointmentController {
           model: User,
           as: 'provider',
           attributes: ['name', 'email']
+        },
+        {
+          model: User,
+          as: 'user',
+          attributes: ['name']
         }
       ]
     });
@@ -117,7 +122,8 @@ class AppointmentController {
       });
     }
 
-    const dateWitchSub = subHours(appointment.date, 2);
+    const dateWitchSub = subHours(appointment.data, 2);
+
     // Verificando se esta dentro do horário de 2 horas do cancelamento, é o horario limite para cancelamento
     if (isBefore(dateWitchSub, new Date())) {
       return res.status(401).json({
@@ -132,7 +138,14 @@ class AppointmentController {
     await Mail.sendMail({
       to: `${appointment.provider.name} <${appointment.provider.email}>`,
       subject: 'Agendamento cancelado',
-      html: 'Você tem um novo cancelamento'
+      template: 'cancellation',
+      context: {
+        provider: appointment.provider.name,
+        user: appointment.user.name,
+        data: format(appointment.data, "'dia' dd 'de' MMMM', às' H:mm'h'", {
+          locale: pt
+        })
+      }
     });
 
     return res.json(appointment);
